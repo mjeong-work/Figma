@@ -1,0 +1,223 @@
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Upload, X, Image as ImageIcon } from 'lucide-react';
+
+interface CreatePostDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (post: {
+    title: string;
+    category: string;
+    content: string;
+    image?: string;
+  }) => void;
+}
+
+export function CreatePostDialog({ open, onOpenChange, onSubmit }: CreatePostDialogProps) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('current-students');
+  const [content, setContent] = useState('');
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !content.trim()) {
+      return;
+    }
+
+    const newPost = {
+      title: title.trim(),
+      category,
+      content: content.trim(),
+      image: uploadedImage || undefined
+    };
+
+    onSubmit(newPost);
+    
+    // Reset form
+    setTitle('');
+    setCategory('current-students');
+    setContent('');
+    setUploadedImage(null);
+    onOpenChange(false);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setUploadedImage(null);
+  };
+
+  const handleCancel = () => {
+    setTitle('');
+    setCategory('current-students');
+    setContent('');
+    setUploadedImage(null);
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="font-[Roboto]">
+          <DialogTitle className="text-[#111]">Create New Post</DialogTitle>
+          <DialogDescription className="text-[#666]">
+            Share your thoughts with the Campus Connect community
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 font-[Roboto]">
+          {/* Title */}
+          <div>
+            <Label htmlFor="post-title" className="text-[#666] mb-1.5 block">
+              Post Title *
+            </Label>
+            <Input
+              id="post-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a descriptive title..."
+              className="border-[#e5e7eb] rounded-lg"
+              required
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <Label htmlFor="post-category" className="text-[#666] mb-1.5 block">
+              Category *
+            </Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="border-[#e5e7eb] rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="current-students">Current Students</SelectItem>
+                <SelectItem value="alumni">Alumni</SelectItem>
+                <SelectItem value="all-school">All School</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Date (Auto-filled, read-only) */}
+          <div>
+            <Label htmlFor="post-date" className="text-[#666] mb-1.5 block">
+              Date
+            </Label>
+            <Input
+              id="post-date"
+              value={new Date().toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+              disabled
+              className="border-[#e5e7eb] rounded-lg bg-[#f9fafb] text-[#666]"
+            />
+          </div>
+
+          {/* Content */}
+          <div>
+            <Label htmlFor="post-content" className="text-[#666] mb-1.5 block">
+              Post Content *
+            </Label>
+            <Textarea
+              id="post-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's on your mind? Share with the community..."
+              className="border-[#e5e7eb] rounded-lg min-h-[120px]"
+              required
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <Label className="text-[#666] mb-1.5 block">
+              Photo (Optional)
+            </Label>
+            
+            {!uploadedImage ? (
+              <div className="border-2 border-dashed border-[#e5e7eb] rounded-lg p-5 text-center hover:border-[#0b5fff] transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-[rgba(67,68,68,0.1)] flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-[#0b5fff]" />
+                    </div>
+                    <div className="text-sm text-[#666]">
+                      Click to upload an image
+                    </div>
+                    <div className="text-xs text-[#999]">
+                      PNG, JPG, GIF up to 10MB
+                    </div>
+                  </div>
+                </label>
+              </div>
+            ) : (
+              <div className="relative border border-[#e5e7eb] rounded-lg overflow-hidden">
+                <img 
+                  src={uploadedImage} 
+                  alt="Upload preview" 
+                  className="w-full h-auto max-h-[250px] object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#f9fafb] transition-colors"
+                >
+                  <X className="w-4 h-4 text-[#666]" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-3">
+            <Button
+              type="button"
+              onClick={handleCancel}
+              className="bg-white border border-[#e5e7eb] text-[#111] hover:bg-[#f9fafb] px-6 py-2 rounded-lg w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={!title.trim() || !content.trim()}
+              className="bg-[rgb(0,0,0)] hover:bg-[#0949cc] text-white px-6 py-2 rounded-lg shadow-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Post to Community
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
